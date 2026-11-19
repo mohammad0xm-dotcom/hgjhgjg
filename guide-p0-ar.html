@@ -1,0 +1,27 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>دليل المرحلة 0: القياس</title>
+<style>body{font:17px/1.9 -apple-system,system-ui,sans-serif;max-width:640px;margin:auto;padding:16px;background:#eef2f6;color:#14213d}
+h1{font-size:25px}h2{font-size:20px;margin-top:26px;border-right:5px solid #b45309;padding-right:10px}li{margin-bottom:6px}
+.w{background:#fff3e0;border-radius:12px;padding:10px 14px}code{background:#fff;padding:1px 6px;border-radius:6px;direction:ltr;unicode-bidi:embed}</style></head><body>
+<h1>المرحلة 0: القياس فقط</h1>
+<p class="w">هذه نسخة اختبار <b>منفصلة تماماً</b> عن V3 (أيقونة برتقالية باسم CardScan P0). V3 لا يُلمس ولا يُستبدل. سلوك القراءة هو نفسه حرفياً، وأُضيف فقط قياس الأزمنة وعدد المحاولات وأسباب الرفض.</p>
+<h2>1) نشرها في مستودع جديد (لا تلمس cardscan)</h2>
+<ol><li>على اللابتوب: في GitHub اضغط <code>+</code> ثم <code>New repository</code>، الاسم <code>cardscan-p0</code>، <code>Public</code>، ثم <code>Create</code>.</li>
+<li>فك ضغط <code>CardScan60K-Phase0.zip</code> ثم <code>Add file</code> ثم <code>Upload files</code> واسحب الملفات (ما عدا هذا الدليل إن شئت) ثم <code>Commit changes</code>.</li>
+<li><code>Settings</code> ثم <code>Pages</code> ثم <code>Branch: main</code> و <code>/ (root)</code> ثم <code>Save</code>. الرابط: <code>https://ahmadjawabrah11-collab.github.io/cardscan-p0/</code></li></ol>
+<h2>2) على كل جوال (7 جوالات)</h2>
+<ol><li>افتح الرابط في Safari والإنترنت شغال، ثم <code>Add to Home Screen</code>، وافتح التطبيق من الأيقونة البرتقالية.</li>
+<li>اكتب موديل الجوال (مثل <code>13 Pro Max</code>) واختر الوضع <code>handheld</code> أو <code>stand</code>.</li>
+<li>اضغط <code>Device speed test</code> (حوالي دقيقة، لا تحتاج مغلفاً). ثم <code>Export report</code> واحفظ الملف.</li></ol>
+<h2>3) بروتوكول الاختبار (حوالي 100 مغلف حقيقي)</h2>
+<ol><li><b>50 مغلفاً باليد</b> (<code>handheld</code>)، ثم <b>50 مغلفاً على حامل ثابت</b> (<code>stand</code>): الجوال مثبّت، مسافة ثابتة، والمغلف يُوضع على حاجز كرتون يجعل نافذته في مكان واحد، وإضاءة جانبية ناعمة بدون لمعان على النافذة.</li>
+<li>اضغط <code>START SCANNING</code> وامسح المغلفات كالعادة بدون لمس الشاشة. لا تغيّر أي شيء في طريقتك.</li>
+<li>بعد كل 25 مغلفاً تقريباً: <code>Verify results</code>. اضغط كل سجل وقارنه بالورق: <code>Matches the paper ✓</code> أو <code>Does not match ✗</code> مع كتابة القيم الصحيحة. سجلات REVIEW اكتب لها القيم الصحيحة. <b>هذه الخطوة أهم خطوة لقياس الدقة.</b></li>
+<li>اضغط <code>Benchmark stats</code> لترى الملخص، ثم <code>Export report</code>.</li></ol>
+<h2>4) ماذا ترسل لي</h2>
+<p>ملف <code>p0-report-….json</code> فقط. لا يحتوي أرقام حسابات ولا أرقام بطاقات ولا أسماء ولا صوراً: فقط أزمنة وعدادات وأسباب رفض وعلامات صح/خطأ. <b>لا ترسل</b> ملفات Excel أو النسخ الاحتياطية أو لقطات شاشة فيها أرقام.</p>
+<h2>5) تنبيهات</h2>
+<ul><li>بيانات P0 منفصلة عن V3، لكن الموقع (github.io) واحد: لا تمسح بيانات Safari للموقع، فهذا يمسح V3 أيضاً.</li>
+<li>سجلات P0 للاختبار فقط: لا تدمجها مع بيانات V3 الحقيقية ولا تصدّرها للعمل.</li>
+<li>إذا أُغلق التطبيق فجأة أثناء المسح سيُسجَّل ذلك تلقائياً كحدث، وهو معلومة مفيدة عن الذاكرة.</li></ul>
+</body></html>

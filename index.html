@@ -1,0 +1,248 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="CardScan P0">
+<meta name="theme-color" content="#14213d"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<title>CardScan P0 Benchmark</title>
+<style>
+:root{--bg:#eef2f6;--ink:#14213d;--mut:#5b6678;--card:#fff;--pri:#1d4ed8;--ok:#15803d;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px -apple-system,system-ui,sans-serif}
+#home{max-width:520px;margin:auto;padding:max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+h1{font-size:28px;letter-spacing:-.02em;margin:6px 0 2px}.sub{color:var(--mut);font-size:13px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.st{background:var(--card);border-radius:18px 18px 18px 6px;padding:14px;border-left:5px solid var(--ink)}
+.st:nth-child(2){border-color:var(--ok)}.st:nth-child(3){border-color:var(--warn)}.st:nth-child(4){border-color:var(--pri)}
+.st b{display:block;font-size:30px;font-variant-numeric:tabular-nums}.st span{color:var(--mut);font-size:13px}
+button{font:inherit;border:0;border-radius:14px;padding:15px;width:100%;margin:0 0 10px;background:var(--card);color:var(--ink);font-weight:600}
+button:active{opacity:.7}.pri{background:var(--pri);color:#fff;font-size:20px;padding:22px}.grn{background:var(--ok);color:#fff}
+.row{display:flex;gap:8px}.row button{padding:12px 4px;font-size:14px}
+.chip{color:var(--mut);font-size:13px;line-height:1.7;margin:8px 0}
+#scan{position:fixed;inset:0;background:#000;display:none;z-index:5}video{width:100%;height:100%;object-fit:cover}
+#g{position:absolute;left:5%;right:5%;top:36%;height:19%;border-radius:10px;box-shadow:0 0 0 100vmax #0008;
+ background:linear-gradient(#fff,#fff) left top/26px 3px,linear-gradient(#fff,#fff) left top/3px 26px,linear-gradient(#fff,#fff) right top/26px 3px,linear-gradient(#fff,#fff) right top/3px 26px,linear-gradient(#fff,#fff) left bottom/26px 3px,linear-gradient(#fff,#fff) left bottom/3px 26px,linear-gradient(#fff,#fff) right bottom/26px 3px,linear-gradient(#fff,#fff) right bottom/3px 26px;background-repeat:no-repeat}
+#msg,#cnt{position:absolute;left:0;right:0;text-align:center;color:#fff;font-weight:600;padding:0 16px}
+#msg{top:max(18px,env(safe-area-inset-top))}#cnt{top:calc(55% + 22px);font-size:14px;opacity:.85}
+#dbg{position:absolute;left:12px;right:12px;top:calc(55% + 52px);color:#fde68a;font:12px/1.4 ui-monospace,monospace;word-break:break-all}
+#stop{position:absolute;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;width:auto;background:#000b;color:#fff}
+#done{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-size:64px;font-weight:800;pointer-events:none}
+#done span{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.ov{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:9}
+.sheet{background:var(--bg);width:100%;max-height:88%;overflow:auto;padding:18px 16px max(18px,env(safe-area-inset-bottom));border-radius:22px 22px 0 0}
+.rw{background:var(--card);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.rw i{font-style:normal;font-size:12px;color:var(--warn);font-weight:700}input{font:inherit;width:100%;padding:14px;border-radius:12px;border:1px solid #c5cdd9;margin-bottom:10px}
+#th{width:100%;border-radius:10px;margin-bottom:10px;display:none}
+</style></head><body>
+<div id="home">
+<h1>CardScan P0</h1><div class="sub">Offline envelope scanner. Data stays on this iPhone.</div><div style="background:#b45309;color:#fff;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px"><b>PHASE 0 BENCHMARK</b>: a separate test copy. V3 is not touched. Exported reports contain no account numbers, card digits, names or images.</div>
+<div class="row"><select id="pc" style="font:inherit;padding:12px;border-radius:12px;border:1px solid #c5cdd9;margin-bottom:10px"><option>handheld</option><option>stand</option></select><input id="pm" placeholder="iPhone model, e.g. 13 Pro Max"></div>
+<div class="row"><button id="bt">Device speed test</button><button id="vfb">Verify results</button></div>
+<div class="row"><button id="bs">Benchmark stats</button><button id="bx">Export report</button></div>
+
+<div class="grid"><div class="st"><b id="t">0</b><span>Total Scanned</span></div><div class="st"><b id="p">0</b><span>Successful</span></div><div class="st"><b id="rv">0</b><span>Failed (review)</span></div><div class="st"><b id="d">0</b><span>Duplicates</span></div></div>
+<div class="chip" id="last"></div><div class="chip" id="sum"></div>
+<button class="pri" id="go">START SCANNING</button>
+<button class="grn" id="ex">EXPORT TO EXCEL</button>
+<div class="row"><button id="rb">Review</button><button id="bk">Backup file</button><button id="rs">Restore</button><button id="set">Settings</button></div><div id="recent"></div>
+<input type="file" id="fi" accept=".json,application/json" hidden>
+<div class="chip" id="stat"></div>
+</div>
+<div id="scan"><video id="v" playsinline muted></video><div id="g"></div><div id="msg"></div><div id="cnt"></div><div id="dbg"></div><button id="stop">Stop</button><div id="done"><b id="dt"></b><span id="ds"></span></div></div>
+<div class="ov" id="bko"><div class="sheet"><h2>Backup due</h2><p>You reached another 500 records. Tap the green button, wait, tap it again, then choose “Save to Files”.</p><button class="grn" id="bb">SAVE BACKUP FILE</button><button id="lt">Later</button></div></div>
+<div class="ov" id="recs"><div class="sheet"><div class="row"><button data-f="r">Review</button><button data-f="d">Duplicates</button><button data-f="a">Latest 100</button></div><div id="ls"></div><button id="cl">Close</button></div></div>
+<div class="ov" id="ed"><div class="sheet"><img id="th" alt=""><input id="ea" inputmode="numeric" maxlength="7" placeholder="Account number (7 digits)"><input id="el" inputmode="numeric" maxlength="4" placeholder="Card last 4 digits"><button class="grn" id="sv">Save correction</button><button id="ka">Keep anyway (add to Excel)</button><button id="dx" style="color:#b91c1c">Delete this record</button><button id="ec">Cancel</button></div></div>
+<div class="ov" id="so"><div class="sheet"><h2>Settings</h2><p>Wait before the next envelope can be captured: <b id="dv"></b> s</p><input type="range" id="dl" min="0.5" max="6" step="0.5"><button id="sc">Close</button></div></div>
+<div class="ov" id="vfs"><div class="sheet"><h2>Verify against the paper</h2><div id="vls"></div><button id="vclose">Close</button></div></div>
+<div class="ov" id="vm"><div class="sheet"><img id="vth2" alt="" style="width:100%;border-radius:10px;margin-bottom:10px"><p id="vtx"></p><button class="grn" id="vok">Matches the paper ✓</button><button id="vbad">Does not match ✗</button><div id="vin" style="display:none"><input id="va" inputmode="numeric" maxlength="7" placeholder="True account (7 digits)"><input id="vl" inputmode="numeric" maxlength="4" placeholder="True last 4"><button class="grn" id="vsv">Save true values</button></div><button id="vcl">Close</button></div></div>
+<div class="ov" id="bss"><div class="sheet"><h2>Benchmark stats</h2><pre id="bst" style="white-space:pre-wrap;font-size:13px"></pre><button id="bsc">Close</button></div></div>
+<canvas id="cv" hidden></canvas>
+<script src="core.js"></script>
+<script>
+const $=i=>document.getElementById(i),sleep=m=>new Promise(r=>setTimeout(r,m)),cv=$('cv');
+const S={ok:0,rev:0,dup:0,keys:new Map(),last:null,recent:[]};
+const DB={db:null,
+ open(){return new Promise((ok,no)=>{const r=indexedDB.open('cardscan_p0',1);r.onupgradeneeded=()=>r.result.createObjectStore('rec',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>{this.db=r.result;ok()};r.onerror=()=>no(r.error)})},
+ tx(mode,fn){return new Promise((ok,no)=>{const t=this.db.transaction('rec',mode,{durability:'strict'}),v=fn(t.objectStore('rec'));t.oncomplete=()=>ok(v instanceof IDBRequest?v.result:v);t.onerror=t.onabort=()=>no(t.error||Error('transaction aborted'))})},
+ all(){return this.tx('readonly',s=>s.getAll())}};
+const kv=(m,fn)=>new Promise((ok,no)=>{const r=indexedDB.open('cardscan_p0_snap',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onerror=()=>no(r.error);r.onsuccess=()=>{const t=r.result.transaction('kv',m),q=fn(t.objectStore('kv'));t.oncomplete=()=>{r.result.close();ok(q&&q.result)};t.onerror=()=>no(t.error)}});
+const dump=async()=>JSON.stringify({app:'cardscan60k',v:1,t:new Date().toISOString(),records:await DB.all()});
+const snap=async k=>{const j=await dump();await kv('readwrite',s=>s.put(j,k||'cur'))};
+function tally(r){S.last=r;S.recent.push(r);if(S.recent.length>8)S.recent.shift();if(r.status==='review'){S.rev++;return}if(r.status==='dup'){S.dup++;return}S.ok++;S.keys.set(r.acct+'|'+r.last4,1)}
+async function load(){S.ok=S.rev=S.dup=0;S.keys=new Map();S.last=null;S.recent=[];await DB.tx('readonly',s=>{s.openCursor().onsuccess=e=>{const c=e.target.result;if(c){tally(c.value);c.continue()}}})}
+function draw(){$('t').textContent=S.ok+S.rev+S.dup;$('p').textContent=S.ok;$('rv').textContent=S.rev;$('d').textContent=S.dup;
+ $('last').textContent=S.last?`Last saved: #${S.last.id}  ${S.last.acct||'—'} | ${S.last.last4||'—'}${S.last.status!=='ok'?' ('+S.last.status+')':''}. Continue with the next envelope.`:'No records yet.';
+ const ss=JSON.parse(localStorage.p0_sess||'[]'),l=ss[ss.length-1];$('sum').textContent=l?`Last session: ${l.ok} saved · ${l.fail} failed · ${l.dup} duplicates · ${Math.max(1,Math.round((l.t1-l.t0)/6e4))} min`:'';
+ $('recent').innerHTML=S.recent.length?'<div class="chip"><b>Recently saved</b></div>'+S.recent.slice().reverse().map(r=>`<div class="rw"><span>#${r.id}  ${r.acct||'—'} | ${r.last4||'—'}</span><i>${r.status==='ok'?'✓ SAVED':r.status==='dup'?'DUPLICATE':'REVIEW'}</i></div>`).join(''):''}
+async function prune(id){const o=await DB.tx('readonly',s=>s.get(id));if(o&&o.thumb&&o.status!=='review'){delete o.thumb;await DB.tx('readwrite',s=>s.put(o))}} /* audit images are kept for the last 300 records (and for every review item) */
+async function save(r){r.t=Date.now();r.id=await DB.tx('readwrite',s=>s.add(r));
+ const c=await DB.tx('readonly',s=>s.get(r.id));if(!c||c.acct!==r.acct||c.last4!==r.last4)throw Error('read-back check failed');tally(r);prune(r.id-300).catch(()=>{})}
+async function restore(d){
+ if(!d||d.app!=='cardscan60k'||!Array.isArray(d.records))throw Error('This is not a CardScan backup file.');
+ const D=/^\d{7}$/,F=/^\d{4}$/;
+ if(d.records.some(r=>!Number.isInteger(r.id)||(r.acct!==null&&!D.test(r.acct))||(r.last4!==null&&!F.test(r.last4))||(r.status==='ok'&&!(r.acct&&r.last4))))throw Error('Backup file is damaged. Nothing was changed.');
+ await snap('prev');await DB.tx('readwrite',s=>{s.clear();d.records.forEach(r=>s.put(r))});await load();draw()}
+function shareFile(f){return(async()=>{
+ if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return true}catch(e){if(e.name==='AbortError')return false}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),6e4);return true})()}
+function twoStep(b,label,make,after){let f=null;b.onclick=async()=>{
+ if(f){const x=f;f=null;b.textContent=label;if(await shareFile(x)&&after)after();return}
+ b.textContent='Preparing…';try{f=await make()}catch(e){b.textContent=label;return alert(e.message)}
+ if(!f){b.textContent=label;return}b.textContent='TAP AGAIN TO SAVE THE FILE'}}
+const stamp=()=>new Date().toISOString().slice(0,10);
+twoStep($('ex'),'EXPORT TO EXCEL',async()=>{
+ const a=(await DB.all()).filter(r=>r.status==='ok');if(!a.length)throw Error('Nothing to export yet.');
+ if(S.rev&&!confirm(S.rev+' records still need review and will NOT be in the Excel file. Continue?'))return null;
+ return new File([P.xlsx(a.map(r=>[r.acct,r.last4]))],`CardScan_${a.length}_${stamp()}.xlsx`,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});
+const makeBackup=async()=>new File([await dump()],`cardscan-backup-${S.ok}-${stamp()}.json`,{type:'application/json'});
+twoStep($('bk'),'Backup file',makeBackup,()=>{localStorage.p0_bk=S.ok;status()});
+let bbDone=()=>{};
+twoStep($('bb'),'SAVE BACKUP FILE',makeBackup,()=>{localStorage.p0_bk=S.ok;status();bbDone()});
+const askBackup=()=>new Promise(res=>{$('bko').style.display='flex';bbDone=()=>{$('bko').style.display='none';res()};$('lt').onclick=bbDone});
+$('rs').onclick=()=>$('fi').click();
+$('fi').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{const d=JSON.parse(await f.text());if(!confirm(`Replace the ${S.ok+S.rev} records on this phone with the ${d.records.length} records in this backup? A safety copy of the current data is kept first.`))return;await restore(d);alert('Restored '+d.records.length+' records.')}catch(x){alert('Restore failed: '+x.message)}};
+/* ---------- OCR engine (loaded once online, then served from the service-worker cache) ---------- */
+let SWP=Promise.resolve(),EP=null;
+async function sw(){if(!('serviceWorker'in navigator))return;try{await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;
+ if(!navigator.serviceWorker.controller)await new Promise(r=>{navigator.serviceWorker.addEventListener('controllerchange',r,{once:true});setTimeout(r,4000)})}catch(e){}}
+const engine=()=>EP||(EP=(async()=>{await SWP;
+ await new Promise((ok,no)=>{if(window.Tesseract)return ok();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>no(Error('OCR engine not available. Open the app once with internet.'));document.head.append(s)});
+ const w=await Tesseract.createWorker('eng',1,{});await w.setParameters({tessedit_pageseg_mode:'6'});localStorage.p0_ready='1';status();return w})().catch(e=>{EP=null;throw e}));
+/* ---------- camera frame -> gray buffer; OCR callback; scanning loop ---------- */
+function grab(){const v=$('v'),vw=v.videoWidth,vh=v.videoHeight,r=v.getBoundingClientRect(),g=$('g').getBoundingClientRect(),
+ sc=Math.max(r.width/vw,r.height/vh),ox=(vw*sc-r.width)/2,oy=(vh*sc-r.height)/2,sx=(g.left-r.left+ox)/sc,sy=(g.top-r.top+oy)/sc,sw=g.width/sc,sh=g.height/sc,W=Math.round(sw),H=Math.round(sh);
+ cv.width=W;cv.height=H;const x=cv.getContext('2d',{willReadFrequently:true});x.drawImage(v,sx,sy,sw,sh,0,0,W,H);
+ const d=x.getImageData(0,0,W,H).data,g8=new Uint8Array(W*H);for(let i=0;i<W*H;i++)g8[i]=(d[4*i]*77+d[4*i+1]*150+d[4*i+2]*29)>>8;return{g:g8,W,H}}
+function put(g,W,H){cv.width=W;cv.height=H;const x=cv.getContext('2d'),im=x.createImageData(W,H);for(let i=0;i<W*H;i++){const p=4*i;im.data[p]=im.data[p+1]=im.data[p+2]=g[i];im.data[p+3]=255}x.putImageData(im,0,0);return cv}
+const thumb=(g,W,H)=>{put(g,W,H);const t=document.createElement('canvas');t.width=360;t.height=Math.round(360*H/W);t.getContext('2d').drawImage(cv,0,0,t.width,t.height);return t.toDataURL('image/jpeg',.55)};
+const lines=d=>d.lines&&d.lines.length?d.lines:(d.text||'').split('\n').map(text=>({text,confidence:d.confidence}));
+let curWL=null;
+const ocrFn=async(g,W,H,digits)=>{const w=await engine();let t=performance.now();if(curWL!==digits){await w.setParameters({tessedit_char_whitelist:digits===false?'':'0123456789*'});curWL=digits;CUR.wl+=performance.now()-t;CUR.wlN++}t=performance.now();const cc=put(g,W,H);CUR.put+=performance.now()-t;t=performance.now();const L=lines((await w.recognize(cc)).data);CUR.rec+=performance.now()-t;callsTotal++;if(digits===false)CUR.geo++;else if(P.TEL.stage==='B')CUR.B++;else CUR.A++;return L};
+let scanning=false,stream=null,wl=null,SESS=null;
+const msg=t=>$('msg').textContent=t,RE=()=>(+localStorage.p0_delay||1.5)*1000;
+const dbg=(L,a)=>$('dbg').textContent=`OCR [${a}°]: `+(L||[]).map(l=>(l.text||'').trim()).filter(Boolean).join(' | ').slice(0,160);
+const cnt=()=>$('cnt').textContent=`This session: ${SESS.ok} saved · ${SESS.fail} failed · ${SESS.dup} duplicates`;
+function flash(t,c,s){$('done').style.background=c;$('dt').textContent=t;$('ds').textContent=s;$('done').style.display='flex';setTimeout(()=>$('done').style.display='none',1000)}
+async function commit(r,status,o){
+ const rec={acct:r.acct||null,last4:r.last4||null,status};if(status==='ok')rec.status=P.classify(S.keys,rec.acct,rec.last4);
+ if(o&&o.img)rec.thumb=thumb(o.img,o.W,o.H);
+ const ts=performance.now();try{await save(rec)}catch(e){stopScan();alert('SAVE FAILED. This envelope was NOT recorded. '+e.message);return false}const saveMs=performance.now()-ts;try{teleSave(rec,status,saveMs,o)}catch(e){}
+ SESS[rec.status==='ok'?'ok':rec.status==='dup'?'dup':'fail']++;
+ const m={ok:['SAVED SUCCESSFULLY ✓','#15803dee',`${rec.acct} | ${rec.last4}`],dup:['DUPLICATE, NOT ADDED','#b45309ee','Kept under Duplicates, left out of Excel'],review:['UNCLEAR, SENT TO REVIEW','#b91c1cee','Fix it later under Review']}[rec.status];
+ flash(...m);cnt();
+ if(rec.status==='ok'&&S.ok%500===0){try{await snap()}catch(e){}await askBackup()}
+ return true}
+async function scan(){
+ const st={ang:0,armed:true,last:null};let V=P.voter(),empty=0,last=null,cool=0,lastO=null;SESS={t0:Date.now(),ok:0,fail:0,dup:0};teleStart();cnt();msg(S.last?`Resuming after record #${S.last.id}`:'Ready');
+ while(scanning){
+  if(!$('v').videoWidth){await sleep(150);continue}
+  let o=null,fr=null;const tF=performance.now();try{fr=tGrab();o=await P.read(ocrFn,fr,st)}catch(e){msg('OCR error: '+e.message);await sleep(800);continue}try{tele(o,fr,st,performance.now()-tF)}catch(e){}
+  dbg(st.last,st.ang);if(o)lastO=o;
+  const r=o?o.r:{acct:null,last4:null,conf:0},any=!!(r.acct||r.last4),key=o&&o.pair?o.pair.acct+'|'+o.pair.last4:null;
+  if(!st.armed){ /* same envelope still in view: ignore it until it leaves, a different one appears, and the delay has passed */
+   empty=any?0:empty+1;
+   if(Date.now()>=cool&&(empty>=2||(key&&last!=='*'&&key!==last))){st.armed=true;V=P.voter();empty=0}
+   else{await sleep(80);continue}}
+  const w=V.add(o&&o.pair?r:{...r,conf:0});
+  if(w){if(!await commit(w,'ok',o))break;last=w.acct+'|'+w.last4;st.armed=false;cool=Date.now()+RE();V=P.voter();empty=0}
+  else if(V.seen>=6){if(!await commit(V.part||{},'review',lastO))break;last='*';st.armed=false;cool=Date.now()+RE();V=P.voter();empty=0}
+  else msg(any?'Reading… hold steady':'Fit the two number lines inside the frame');
+  await sleep(40)}}
+async function start(){
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})}
+ catch(e){return alert('Camera is blocked. Allow the camera for this app in iPhone Settings, then try again.')}
+ $('v').srcObject=stream;await $('v').play();$('scan').style.display='block';scanning=true;msg('Loading OCR…');
+ try{wl=await navigator.wakeLock.request('screen')}catch(e){}
+ try{await engine()}catch(e){stopScan();return alert(e.message)}
+ scan()}
+function stopScan(){const was=scanning;scanning=false;try{teleStop()}catch(e){}if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;try{wl&&wl.release()}catch(e){}$('scan').style.display='none';
+ if(was&&SESS){const a=JSON.parse(localStorage.p0_sess||'[]');a.push({...SESS,t1:Date.now()});localStorage.p0_sess=JSON.stringify(a.slice(-20))}draw()}
+$('go').onclick=start;$('stop').onclick=stopScan;document.addEventListener('visibilitychange',()=>{if(document.hidden&&scanning)stopScan()});
+/* ---------- review / records / settings ---------- */
+let rows=new Map(),cur=null,lf='r';
+async function list(f){lf=f;const a=await DB.all();let x=f==='r'?a.filter(r=>r.status==='review'):f==='d'?a.filter(r=>r.status==='dup'):a;
+ x=x.slice(-100).reverse();rows=new Map(x.map(r=>[r.id,r]));
+ $('ls').innerHTML=x.length?x.map(r=>`<div class="rw" data-id="${r.id}"><span>#${r.id}  ${r.acct||'—'} | ${r.last4||'—'}</span><i>${r.status==='review'?'REVIEW':r.status==='dup'?'DUPLICATE':'✓'}</i></div>`).join(''):'<p>Nothing here.</p>'}
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>list(b.dataset.f));
+$('rb').onclick=()=>{$('recs').style.display='flex';list('r')};$('cl').onclick=()=>$('recs').style.display='none';
+$('ls').onclick=e=>{const r=e.target.closest('.rw');if(!r)return;cur=rows.get(+r.dataset.id);$('th').src=cur.thumb||'';$('th').style.display=cur.thumb?'block':'none';
+ $('ea').value=cur.acct||'';$('el').value=cur.last4||'';$('ka').style.display=cur.status==='dup'?'block':'none';$('ed').style.display='flex'};
+$('ec').onclick=()=>$('ed').style.display='none';
+const after=async()=>{await load();draw();$('ed').style.display='none';list(lf)};
+$('sv').onclick=async()=>{const a=$('ea').value,l=$('el').value;if(!/^\d{7}$/.test(a)||!/^\d{4}$/.test(l))return alert('Account must be exactly 7 digits and last 4 exactly 4 digits.');
+ const rec={...cur,acct:a,last4:l,status:'ok',manual:true};delete rec.thumb;await DB.tx('readwrite',s=>s.put(rec));after()};
+$('ka').onclick=async()=>{await DB.tx('readwrite',s=>s.put({...cur,status:'ok',manual:true}));after()};
+$('dx').onclick=async()=>{if(!confirm('Delete record #'+cur.id+' permanently?'))return;await DB.tx('readwrite',s=>s.delete(cur.id));after()};
+$('set').onclick=()=>{$('dl').value=RE()/1e3;$('dv').textContent=RE()/1e3;$('so').style.display='flex'};$('dl').oninput=()=>{localStorage.p0_delay=$('dl').value;$('dv').textContent=$('dl').value};$('sc').onclick=()=>$('so').style.display='none';
+/* ---------- status + startup ---------- */
+async function status(){let per=false;try{per=await navigator.storage.persisted()||await navigator.storage.persist()}catch(e){}
+ const inst=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+ $('stat').innerHTML=`${inst?'✅':'⚠️'} Home Screen app${inst?'':': add it with Share ▸ Add to Home Screen first (Safari can erase browser data after 7 days)'}<br>${per?'✅':'⚠️'} Storage protection requested<br>${localStorage.p0_ready?'✅':'⚠️'} OCR engine loaded${localStorage.p0_ready?' (confirm offline with the airplane-mode test)':': open once with internet'}<br>🗂 Last file backup: ${+localStorage.p0_bk>0?'at '+(+localStorage.p0_bk)+' records':'none yet'}`}
+/* ======== PHASE 0 TELEMETRY: measurement only; OCR behaviour is unchanged. Nothing here stores digits in the report. ======== */
+let TELE;try{TELE=JSON.parse(localStorage.p0_tel||'')}catch(e){}if(!TELE||!TELE.env)TELE={env:[],ev:[],sessions:[],bench:null};
+const saveTele=()=>{try{localStorage.p0_tel=JSON.stringify(TELE)}catch(e){TELE.env=TELE.env.slice(-500);try{localStorage.p0_tel=JSON.stringify(TELE)}catch(x){}}};
+const CUR0=()=>({cap:0,put:0,rec:0,wl:0,wlN:0,geo:0,A:0,B:0});let CUR=CUR0(),F=null,lastSaveT=0,prevQ=null,sessIdx=-1,HB=null,callsTotal=0;
+const newF=()=>({t1:0,gap:0,fr:0,codes:'',ms:[],sh:[],mo:[],cap:0,pre:0,put:0,rec:0,val:0,wl:0,geo:0,A:0,B:0,cd:0,tele:0,idle:{n:0,ms:0}});
+const med=(a,p=.5)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*s.length))]};
+const simd=()=>{try{return WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]))}catch(e){return false}};
+const standalone=()=>!!(navigator.standalone||matchMedia('(display-mode: standalone)').matches);
+function tGrab(){const t=performance.now(),f=grab();CUR.cap+=performance.now()-t;return f}
+function tele(o,fr,st,ms){
+ const t0=performance.now(),L=st.last||[],dig=L.some(l=>((l.text||'').match(/\d/g)||[]).length>=4);
+ const c=!o?(dig?'t':'n'):o.pair?'v':P.good(o.r)?'r':(o.r.acct&&o.r.last4)?'c':'l'; /* n none, t digits seen but layout not matched, l one line only, c format ok but low confidence, r second stage rejected, v verified */
+ const q=P.quality(fr.g,fr.W,fr.H,prevQ);prevQ=q.tiny;const T=P.TEL.t,pre=(T.stretch||0)+(T.rotate||0)+(T.fit||0)+(T.sharpen||0)+(T.crop||0),val=T.parse||0;P.TEL.t={};
+ const d={...CUR,pre,val};CUR=CUR0();if(!F)F=newF();
+ if(!st.armed){F.cd++;return}
+ if(!F.t1&&c==='n'){F.idle.n++;F.idle.ms+=ms;return}
+ if(!F.t1){F.t1=performance.now()-ms;F.gap=F.t1-lastSaveT}
+ F.fr++;F.codes+=c;F.ms.push(Math.round(ms));F.sh.push(q.sh);F.mo.push(q.mo);for(const k of['cap','pre','put','rec','val','wl','geo','A','B'])F[k]+=d[k];F.tele+=performance.now()-t0}
+function teleSave(rec,status,saveMs,o){
+ const now=performance.now(),f=F||newF(),L=o&&o.L,sh=x=>(x||'').replace(/\s+/g,'').replace(/\d/g,'d').replace(/[A-Za-z]/g,'a'),cnt={};
+ for(const c of f.codes)cnt[c]=(cnt[c]||0)+1;let reason=null;if(rec.status==='review'){const x=['r','c','l','t'].map(k=>[k,cnt[k]||0]).sort((a,b)=>b[1]-a[1])[0];reason=x[1]?x[0]:'n'}
+ const ps=f.geo+f.A+f.B;
+ TELE.env.push({n:TELE.env.length+1,rid:rec.id,sess:sessIdx,cond:$('pc').value,outcome:rec.status,reason,gap:Math.round(f.gap),proc:Math.round(f.t1?now-f.t1:0),between:Math.round(lastSaveT?now-lastSaveT:0),
+  frames:f.fr,codes:f.codes,cap:Math.round(f.cap),pre:Math.round(f.pre),put:Math.round(f.put),rec:Math.round(f.rec),val:Math.round(f.val*10)/10,wl:Math.round(f.wl),save:Math.round(saveMs),tele:Math.round(f.tele),
+  geo:f.geo,A:f.A,B:f.B,msPass:ps?Math.round(f.rec/ps):null,idleN:f.idle.n,idleMs:Math.round(f.idle.ms),cd:f.cd,sh:med(f.sh),mo:med(f.mo),nobox:P.TEL.nobox,calls:callsTotal,
+  shapeCard:L&&o.r&&L[o.r.ci]?sh(L[o.r.ci].text):null,shapeAcct:L&&o.r&&o.r.ai>=0&&L[o.r.ai]?sh(L[o.r.ai].text):null,label:null,diffPos:null});
+ saveTele();lastSaveT=now;F=null;P.TEL.nobox=0}
+function teleStart(){sessIdx=TELE.sessions.length;TELE.sessions.push({t0:Date.now(),cond:$('pc').value,model:$('pm').value,standalone:standalone()});F=null;lastSaveT=performance.now();prevQ=null;CUR=CUR0();P.TEL.t={};localStorage.p0_alive=Date.now();clearInterval(HB);HB=setInterval(()=>{localStorage.p0_alive=Date.now()},2000);saveTele()}
+function teleStop(){clearInterval(HB);localStorage.p0_alive=0;F=null}
+function uncleanCheck(){const a=+localStorage.p0_alive;if(a>0){TELE.ev.push({t:Date.now(),type:'unclean-exit',lastAlive:a});localStorage.p0_alive=0;saveTele()}}
+function summary(){const E=TELE.env,g=k=>E.map(e=>e[k]).filter(v=>v!=null),row=(n,a,u)=>a.length?`${n}: median ${med(a)}${u} · p90 ${med(a,.9)}${u}`:`${n}: none`,lab=E.filter(e=>e.label),rs={};
+ E.filter(e=>e.outcome==='review').forEach(e=>rs[e.reason]=(rs[e.reason]||0)+1);const b=TELE.bench;
+ return [b?`Speed test: engine start ${b.engineMs} ms · SIMD ${b.simd} · pipeline on a synthetic frame: ${b.pipeline.map(r=>r.ms).join('/')} ms, ${b.pipeline[0].passes} passes`:'Speed test: not run',
+ `Envelopes ${E.length}: saved ${E.filter(e=>e.outcome==='ok').length}, duplicate ${E.filter(e=>e.outcome==='dup').length}, review ${E.filter(e=>e.outcome==='review').length}`,
+ row('Processing (first seen to saved)',g('proc'),' ms'),row('Between envelopes (save to save)',g('between'),' ms'),row('Capture',g('cap'),' ms'),row('Preprocess',g('pre'),' ms'),row('Canvas copy',g('put'),' ms'),row('OCR',g('rec'),' ms'),row('Validation',g('val'),' ms'),row('Save',g('save'),' ms'),
+ row('OCR passes',E.map(e=>e.geo+e.A+e.B),''),row('Frames to save',g('frames'),''),`Review reasons: ${JSON.stringify(rs)}`,
+ `Checked against paper: ✓ ${lab.filter(e=>e.label==='ok').length} · ✗ ${lab.filter(e=>e.label==='wrong').length} · typed truth ${lab.filter(e=>e.label==='truth').length} · unchecked ${E.length-lab.length}`].join('\n')}
+$('bs').onclick=()=>{$('bst').textContent=summary();$('bss').style.display='flex'};$('bsc').onclick=()=>$('bss').style.display='none';
+async function speedTest(){const b=$('bt');b.textContent='Running…';
+ try{const out={ts:Date.now()},t0=performance.now();await engine();out.engineMs=Math.round(performance.now()-t0);out.simd=simd();
+  const c=document.createElement('canvas');c.width=970;c.height=300;const x=c.getContext('2d');x.fillStyle='#e8e8e8';x.fillRect(0,0,970,300);x.fillStyle='#111';x.font='56px Helvetica,Arial,sans-serif';x.fillText('SAMPLE NAME',60,60);x.fillText('483005*******4454',60,150);x.fillText('0572348',60,235);
+  const d=x.getImageData(0,0,970,300).data,g=new Uint8Array(970*300);for(let i=0;i<g.length;i++)g[i]=(d[4*i]*77+d[4*i+1]*150+d[4*i+2]*29)>>8;
+  out.micro={};for(const[n,f]of[['stretch',()=>P.stretch(g)],['rotate',()=>P.rotate(g,970,300,3)],['fit650',()=>P.fit(g,970,300,650)],['sharpen',()=>P.sharpen(g,970,300)]]){const t=performance.now();for(let i=0;i<10;i++)f();out.micro[n]=+((performance.now()-t)/10).toFixed(1)}
+  out.pipeline=[];for(let i=0;i<5;i++){CUR=CUR0();P.TEL.t={};const t=performance.now(),o=await P.read(ocrFn,{g,W:970,H:300},{ang:0,armed:true,last:null});out.pipeline.push({ms:Math.round(performance.now()-t),passes:CUR.geo+CUR.A+CUR.B,rec:Math.round(CUR.rec),verified:!!(o&&o.pair)})}
+  CUR=CUR0();P.TEL.t={};TELE.bench=out;saveTele();$('bst').textContent=summary();$('bss').style.display='flex'}catch(e){alert('Speed test failed: '+e.message)}b.textContent='Device speed test'}
+$('bt').onclick=speedTest;
+twoStep($('bx'),'Export report',async()=>new File([JSON.stringify({app:'cardscan-p0',v:1,t:new Date().toISOString(),device:{ua:navigator.userAgent,screen:[screen.width,screen.height],dpr:devicePixelRatio,cores:navigator.hardwareConcurrency||null,simd:simd(),standalone:standalone(),model:$('pm').value},bench:TELE.bench,sessions:TELE.sessions,events:TELE.ev,envelopes:TELE.env})],`p0-report-${($('pm').value||'phone').replace(/\W+/g,'')}-${stamp()}.json`,{type:'application/json'}));
+/* verification against the paper: labels are kept in the telemetry; the true digits stay only in this phone's database */
+let vcur=null,vrows=new Map();const envOf=id=>TELE.env.find(e=>e.rid===id);
+async function vlist(){const a=(await DB.all()).slice(-150).reverse();vrows=new Map(a.map(r=>[r.id,r]));
+ $('vls').innerHTML=a.length?a.map(r=>{const e=envOf(r.id),l=!e?'':e.label==='ok'?'✓':e.label==='wrong'?'✗':e.label==='truth'?'typed':'?';return `<div class="rw" data-id="${r.id}"><span>#${r.id}  ${r.acct||'—'} | ${r.last4||'—'}</span><i>${r.status.toUpperCase()} ${l}</i></div>`}).join(''):'<p>No records.</p>'}
+$('vfb').onclick=()=>{$('vfs').style.display='flex';vlist()};$('vclose').onclick=()=>$('vfs').style.display='none';$('vcl').onclick=()=>$('vm').style.display='none';
+$('vls').onclick=e=>{const r=e.target.closest('.rw');if(!r)return;vcur=vrows.get(+r.dataset.id);$('vth2').src=vcur.thumb||'';$('vth2').style.display=vcur.thumb?'block':'none';
+ $('vtx').textContent=vcur.status==='review'?'Saved for review. Type the true values from the paper.':`Saved: ${vcur.acct} | ${vcur.last4}`;const rv=vcur.status==='review';
+ $('vok').style.display=rv?'none':'block';$('vbad').style.display=rv?'none':'block';$('vin').style.display=rv?'block':'none';$('va').value=$('vl').value='';$('vm').style.display='flex'};
+$('vok').onclick=()=>{const e=envOf(vcur.id);if(e){e.label='ok';saveTele()}$('vm').style.display='none';vlist()};
+$('vbad').onclick=()=>{$('vin').style.display='block'};
+$('vsv').onclick=async()=>{const a=$('va').value,l=$('vl').value;if(!/^\d{7}$/.test(a)||!/^\d{4}$/.test(l))return alert('7 digits and 4 digits please.');
+ const e=envOf(vcur.id);if(e){const s=(vcur.acct||'')+(vcur.last4||''),t=a+l,pos=[];for(let i=0;i<11;i++)if(s[i]!==t[i])pos.push(i);e.label=vcur.status==='review'?'truth':'wrong';e.diffPos=pos;saveTele()}
+ await DB.tx('readwrite',s=>s.put({...vcur,truth:{acct:a,last4:l}}));$('vm').style.display='none';vlist()};
+$('pc').value=localStorage.p0_cond||'handheld';$('pm').value=localStorage.p0_model||'';$('pc').onchange=()=>localStorage.p0_cond=$('pc').value;$('pm').oninput=()=>localStorage.p0_model=$('pm').value;
+uncleanCheck();
+(async()=>{SWP=sw();
+ try{await DB.open();await load();draw();
+  if(S.ok+S.rev===0){const j=await kv('readonly',s=>s.get('cur')).catch(()=>null);
+   if(j){const d=JSON.parse(j);if(d.records.length&&confirm(`Found an automatic snapshot with ${d.records.length} records. Restore it?`))await restore(d)}}
+ }catch(e){$('stat').textContent='DATABASE ERROR: '+e.message;return}
+ status();if(navigator.onLine)engine().catch(()=>{})})();
+</script></body></html>
